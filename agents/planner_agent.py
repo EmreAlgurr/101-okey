@@ -672,16 +672,45 @@ class PlannerAgent(Agent):
             if open_pairs and len(hand) - sum(m.size for m in open_pairs[0].melds) <= 1:
                 self._log_decision("open_choice", obs, {"chosen": "open_pairs", "ev_advantage": 101.0})
                 return open_pairs[0]
-            self._log_decision(
-                "open_choice",
-                obs,
-                {
-                    "chosen": "open_series",
-                    "series_points": sum(m.points for m in open_series[0].melds),
-                    "pairs_available": open_pairs is not None,
-                    "ev_advantage": 80.0,
-                },
+            joker_used_in_open = any(
+                spec.is_joker(pt.tile)
+                for m in open_series[0].melds
+                for pt in m.placed_tiles
             )
+            payload: dict[str, Any] = {
+                "chosen": "open_series",
+                "series_points": sum(m.points for m in open_series[0].melds),
+                "pairs_available": open_pairs is not None,
+                "ev_advantage": 80.0,
+            }
+            if self.record_decisions and joker_used_in_open and discards:
+                ctx = self._ctx(obs)
+                seqs = self._seqs(obs, first=NUM_PLAYERS)
+                used_ids = {pt.tile.tile_id for m in open_series[0].melds for pt in m.placed_tiles}
+                dw = [t for t in hand if t.tile_id not in used_ids]
+                if len(dw) <= 1:
+                    ev_open = _win_value(len(dw) == 1 and spec.is_joker(dw[0]), True, False)
+                else:
+                    dw_rem = list(dw)
+                    dw_rem.remove(
+                        _pick_rollout_discard(
+                            dw_rem, OpenType.SERIES, frozenset(), list(ctx.table) + list(open_series[0].melds), spec, len(seqs[0][0])
+                        )
+                    )
+                    open_ctx = _Ctx(
+                        spec=spec,
+                        req_pts=ctx.req_pts,
+                        req_pairs=ctx.req_pairs,
+                        table=ctx.table + tuple(open_series[0].melds),
+                    )
+                    ev_open = sum(
+                        _rollout(dw_rem, OpenType.SERIES, s, open_ctx, frozenset(), tr)
+                        for s, tr in seqs
+                    ) / len(seqs)
+                _, ev_wait = self._evaluate_discards(obs, discards, ctx, seqs, log=False)
+                payload["joker_cf_ev_open"] = ev_open
+                payload["joker_cf_ev_wait"] = ev_wait
+            self._log_decision("open_choice", obs, payload)
             return open_series[0]
 
         if open_pairs:

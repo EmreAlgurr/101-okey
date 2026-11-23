@@ -49,11 +49,9 @@ def analyze_strategy(
     all_round_scores: list[int] = []
     open_count = 0
 
-    # Joker usage tracking per player-round
-    joker_rounds_total = 0
-    joker_okey_wins = 0
-    joker_held_scores: list[int] = []
-    joker_spent_scores: list[int] = []
+    # Joker counterfactual tracking (same hand: spend Joker & open now vs hold & wait 1 turn)
+    joker_cf_open_evs: list[float] = []
+    joker_cf_wait_evs: list[float] = []
 
     for r in range(num_rounds):
         agents = [
@@ -89,22 +87,6 @@ def analyze_strategy(
         assert engine.round_scores is not None
         all_round_scores.extend(engine.round_scores)
         open_count += sum(1 for ot in engine.open_types if ot != OpenType.NONE)
-        spec = engine.joker_spec
-
-        # Joker outcome tracking
-        for s in range(NUM_PLAYERS):
-            if not had_joker[s]:
-                continue
-            joker_rounds_total += 1
-            still_has_joker_at_end = any(spec.is_joker(t) for t in engine.hands[s])
-            won_with_okey = engine.winner == s and engine.win_flags.win_by_okey
-            if won_with_okey:
-                joker_okey_wins += 1
-                joker_held_scores.append(engine.round_scores[s])
-            elif still_has_joker_at_end:
-                joker_held_scores.append(engine.round_scores[s])
-            else:
-                joker_spent_scores.append(engine.round_scores[s])
 
         # Harvest decision logs
         for ag in agents:
@@ -138,6 +120,9 @@ def analyze_strategy(
                 elif kind == "open_choice":
                     if d["chosen"] == "open_series":
                         open_series_immediate += 1
+                        if "joker_cf_ev_open" in d:
+                            joker_cf_open_evs.append(d["joker_cf_ev_open"])
+                            joker_cf_wait_evs.append(d["joker_cf_ev_wait"])
                     elif d["chosen"] == "open_pairs":
                         open_pairs_immediate += 1
 
@@ -229,19 +214,21 @@ def analyze_strategy(
         f"(overall delay rate: {delay_pct:.1f}%)"
     )
 
-    # 4. Joker (Okey) Usage
-    print("\n4. JOKER (OKEY) USAGE — SPEND TO OPEN/MELD vs HOLD FOR OKEYLE BITME")
-    print("-" * 84)
-    okey_pct = 100.0 * joker_okey_wins / max(1, joker_rounds_total)
-    avg_spent = sum(joker_spent_scores) / max(1, len(joker_spent_scores))
-    avg_held = sum(joker_held_scores) / max(1, len(joker_held_scores))
-    print(f"  Player-hands holding a Joker : {joker_rounds_total}")
-    print(f"  Okeyle Bitme (-202, x2) wins : {joker_okey_wins} ({okey_pct:.1f}% of Joker hands)")
+    # 4. Counterfactual Joker (Okey) Test
+    print("\n4. COUNTERFACTUAL JOKER TEST (AYNI ELDE: HARCA VE ŞİMDİ AÇ vs SAKLA VE BEKLE)")
+    print("-" * 88)
+    n_cf = len(joker_cf_open_evs)
+    avg_cf_open = sum(joker_cf_open_evs) / max(1, n_cf)
+    avg_cf_wait = sum(joker_cf_wait_evs) / max(1, n_cf)
+    open_better_pct = 100.0 * sum(
+        1 for o, w in zip(joker_cf_open_evs, joker_cf_wait_evs) if o < w
+    ) / max(1, n_cf)
+    print(f"  Counterfactual Joker-Opening Hands (n={n_cf}):")
+    print(f"    -> Action A (Spend Joker & Open Now)  : avg CRN EV = {avg_cf_open:+.2f} pts")
+    print(f"    -> Action B (Hold Joker & Wait 1 Turn): avg CRN EV = {avg_cf_wait:+.2f} pts")
     print(
-        f"  Avg Round Score (Spent Joker in Meld/Open, n={len(joker_spent_scores)}): {avg_spent:+.2f} pts"
-    )
-    print(
-        f"  Avg Round Score (Held Joker to End / Okey Win, n={len(joker_held_scores)}): {avg_held:+.2f} pts"
+        f"    -> Net EV Advantage of Opening Now    : {avg_cf_wait - avg_cf_open:+.2f} pts "
+        f"(better in {open_better_pct:.1f}% of hands)"
     )
 
     # 5. Take Discard vs Draw Deck
