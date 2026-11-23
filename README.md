@@ -1,6 +1,6 @@
-# Resmi Profesyonel 101 Okey — Oyun Motoru, Tam El Çözücü, Yapay Zekâ ve Strateji Analizi
+# Resmi Profesyonel 101 Okey — Oyun Motoru, Tam El Çözücü, Yapay Zekâ ve Matematiksel Strateji El Kitabı
 
-Python ile sıfırdan geliştirilmiş, **Resmi Profesyonel 101 Okey** kurallarını (ve opsiyonel **Katlamalı + 10× Taş Yedirme Cezalı** ev kurallarını) eksiksiz uygulayan; milisaniye düzeyinde çalışan tam el çözücülü (*Branch & Bound*), bilgi-kümesi tabanlı yapay zekâ ajanlarına (`PlannerAgent`, `IS-MCTS`, `Neural IS-MCTS`, `Heuristic`) ve yerel bir web arayüzüne sahip açık kaynaklı oyun ve simülasyon motoru.
+Python ile sıfırdan geliştirilmiş, **Resmi Profesyonel 101 Okey** kurallarını (ve opsiyonel **Katlamalı + 10× Taş Yedirme Cezalı** ev kurallarını) eksiksiz uygulayan; milisaniye düzeyinde çalışan tam el çözücülü (*Branch & Bound*), bilgi-kümesi tabanlı yapay zekâ ajanlarına (`PlannerAgent`, `IS-MCTS`, `Neural IS-MCTS`, `Heuristic`) ve yerel bir web arayüzüne sahip açık kaynaklı oyun motoru ve matematiksel strateji araştırma projesi.
 
 ---
 
@@ -8,28 +8,28 @@ Python ile sıfırdan geliştirilmiş, **Resmi Profesyonel 101 Okey** kuralları
 
 ```text
 101 okey/
-├── tiles.py                  # 106 taşlık deste, Gösterge/Okey/Sahte Okey, per/seri/çift doğrulama
-├── solver.py                 # Tam Branch & Bound el çözücü (Seri >=101, Çift >=5, min deadwood)
-├── engine.py                 # 4 oyunculu headless oyun motoru, cezalar, çarpanlar, ev kuralları
-├── benchmark.py              # Koltuk rotasyonlu çoklu ajan turnuva kıyaslayıcısı
-├── analyze_strategy.py       # Karar telemetrisi ile Optimal 101 Okey Strateji Raporu çıkarıcı
+├── tiles.py                   # 106 taşlık deste, Gösterge/Okey/Sahte Okey, per/seri/çift doğrulama
+├── solver.py                  # Tam Branch & Bound el çözücü (Seri >=101, Çift >=5, min deadwood)
+├── engine.py                  # 4 oyunculu headless oyun motoru, cezalar, çarpanlar, ev kuralları
+├── benchmark.py               # Koltuk rotasyonlu çoklu ajan turnuva kıyaslayıcısı
+├── analyze_strategy.py        # Karar telemetrisi & Counterfactual EV strateji raporu çıkarıcı
 ├── agents/
-│   ├── base.py               # Ortak Agent arayüzü (yalnızca Observation görür, hile yapamaz)
-│   ├── heuristic_agent.py    # Güçlü kural tabanlı taban ajan + taş sayma savunması
-│   ├── ismcts_agent.py       # PUCT + Top-K budamalı Single-Observer IS-MCTS
-│   ├── neural_ismcts_agent.py# PyTorch PolicyValueNet güdümlü sıfır-rollout IS-MCTS
-│   └── planner_agent.py      # CRN (Common Random Numbers) tabanlı PlannerAgent v1 & v2.1
+│   ├── base.py                # Ortak Agent arayüzü (yalnızca Observation görür, hile yapamaz)
+│   ├── heuristic_agent.py     # Güçlü kural tabanlı taban ajan + taş sayma savunması
+│   ├── ismcts_agent.py        # PUCT + Top-K budamalı Single-Observer IS-MCTS
+│   ├── neural_ismcts_agent.py # PyTorch PolicyValueNet güdümlü sıfır-rollout IS-MCTS
+│   └── planner_agent.py       # CRN (Common Random Numbers) tabanlı PlannerAgent v1 & v2.1
 ├── ml/
-│   ├── encoding.py           # 400 boyutlu durum tensörü & 61 boyutlu maskelenmiş aksiyon uzayı
-│   ├── model.py              # LayerNorm + GELU ResMLP PolicyValueNet
-│   └── train_supervised.py   # CUDA destekli supervised warm-start eğitim boru hattı
+│   ├── encoding.py            # 400 boyutlu durum tensörü & 61 boyutlu maskelenmiş aksiyon uzayı
+│   ├── model.py               # LayerNorm + GELU ResMLP PolicyValueNet
+│   └── train_supervised.py    # CUDA destekli supervised warm-start eğitim boru hattı
 ├── web/
-│   ├── server.py             # FastAPI backend (Oyna & Seyret modları)
-│   └── static/index.html     # Sıfır-build-step koyu zümrüt çuha temalı Web UI
+│   ├── server.py              # FastAPI backend (Oyna & Seyret modları)
+│   └── static/index.html      # Sıfır-build-step koyu zümrüt çuha temalı Web UI
 └── tests/
-    ├── test_rules.py         # Resmi kurallar, 12-13-1 yasağı, Sahte Okey, çarpanlar, 10× ceza
-    ├── test_agents.py        # Ajan yasallığı, determinizasyon, hız ve bilgi-gizliliği testleri
-    └── test_ml.py            # Tensör boyutları, aksiyon maskeleme ve Neural IS-MCTS testleri
+    ├── test_rules.py          # Resmi kurallar, 12-13-1 yasağı, Sahte Okey, çarpanlar, 10× ceza
+    ├── test_agents.py         # Ajan yasallığı, determinizasyon, hız ve bilgi-gizliliği testleri
+    └── test_ml.py             # Tensör boyutları, aksiyon maskeleme ve Neural IS-MCTS testleri
 ```
 
 ---
@@ -87,27 +87,156 @@ Tüm turnuvalar **koltuk sırası döndürülerek** (4 koltuğun tamamı eşit p
 
 ---
 
-## 4. Ampirik 101 Okey Strateji Bulguları (600 El / CRN EV Analizi)
+## 4. Ampirik 101 Okey Strateji Bulguları (CRN EV Analizi)
 
-`PlannerAgent v2.1` ile **Resmi Kurallar** ve **Katlamalı + 10× Yedirme Cezası** altında 150'şer el (600 oyuncu-el) simüle edilerek karar anlarındaki beklenen değer (EV) eğilimleri ve aynı el üzerinde *counterfactual* Okey testleri (80'er el / 320 oyuncu-el) çıkarılmıştır:
+`PlannerAgent v2.1` ile **Resmi Kurallar** ve **Katlamalı + 10× Yedirme Cezası** altında 150'şer el (600 oyuncu-el) simüle edilerek karar anlarındaki beklenen değer (EV) eğilimleri, ayrıca 80'er el (320 oyuncu-el) üzerinde **Counterfactual Okey Testi** ve **1–13 Taş Bazlı Atış Dağılımı** çıkarılmıştır:
 
-| Stratejik Kriter | Resmi Kurallar | House Rules (Katlamalı + 10× Ceza) | Optimal Çıkarım |
+| Karar / Metrik | Resmi Kurallar | Katlamalı + 10× Ceza | Pratik Çıkarım |
 |---|---:|---:|---|
-| **Ortalama Açma Oranı** | ~%80.0 | **%63.5** | Katlamalıda ~1–2 kişi `+202` yer; ilk açan olmak kritiktir. |
-| **Seri 101+ Geldiğinde Hemen Açma** | **%100** | **%100** | `+202` riski ve barajın kilitlenmesi, Elden beklemeyi ezer. |
-| **5 Çift Geldiğinde Hemen Açma** | %92.6 | **%94.0** | Sadece ortada `≥18` taş VE elde `≥90` seri varsa 1 tur beklenir. |
-| **Açmamışken 1–3 Atış Oranı** | %31.1 | **%58.3** | Küçük taşlar hem 101'e az katkı verir hem yedirme riski düşüktür (`+10..+30`). |
-| **Açmamışken 6–11 Atış Oranı** | %36.8 | **%13.6** | Canlı 6–11 atmak hem `+60..+110` ceza hem rakibe açılış hediyesi demektir. |
-| **"13 Paradoksu" (Uç Taş)** | %11.0 | **%11.1** | `12-13-1` yasağı yüzünden `13` tek taraflı uç taştır; canlı `8–10`'lardan daha güvenlidir. |
-| **Açtıktan Sonra 1–4 Atış Oranı** | %11.6 | **%21.0** | 10× cezalı masada ölü düşük taş atmak, canlı `10–12` atmaktan güvenlidir. |
+| **Açma Oranı** | ~%80.0 | **%63.5** | Katlamalıda ellerin ~%36'sı açamadan bitiyor; barajı geçme fırsatı nadir. |
+| **101+ Seri Gelince Hemen Açma** | **%100** | **%100** | Kısa tur sayısı (~5 çekiş) yüzünden 1 tur bile beklemek net `-EV`. |
+| **5 Çift Gelince Hemen Açma** | %92.6 | **%94.0** | Sadece elde `≥90` seri puanı **ve** yerde `≥18` taş varsa seri beklenir. |
+| **Açmadan Önce 1–3 Atış Oranı** | %31.1 | **%58.3** | 10× cezada max risk `+10..+30` olduğu için 1–3'ler ilk yakılan taşlardır. |
+| **Açmadan Önce 6–11 Atış Oranı** | %36.8 | **%13.6** | Canlı 6–11 atmak hem `+60..+110` ceza hem rakibe katlamalı açılış riskidir. |
+| **13 Paradoksu (Açmadan Önce)** | %11.0 | **%11.1** | `12-13-1` yasağı yüzünden 13 tek taraflı uç taştır; canlı 8–10'dan güvenlidir. |
 | **Counterfactual Okey Testi** *(Aynı El)* | **`+15.80` EV** (%62.2) | **`+26.01` EV** (%88.9) | Okey'le açabiliyorken harcayıp açmak (`+15.36`), saklayıp beklemekten (`+41.37`) **+26.01 puan** kârlıdır. |
-| **Yandan Taş Alma Kazancı (Açılış)** | `+63.87` EV | **`+60.32` EV** | Seni açtırıyorsa solundan taş almak hem sana `+60` kazandırır hem rakibe `10×` ceza yazar. |
+| **Yandan Taş Alma Kazancı (Açılış)** | `+63.87` EV | **`+60.32` EV** | Açılış için soldan taş almak kör çekişe göre ~60 puan avantaj sağlar. |
 
-> *Metodoloji Notu: Bu sonuçlar kesin Nash Dengesi değil, `PlannerAgent v2.1`'in 600'er eldeki CRN (Common Random Numbers) simülasyonlarından türetilmiş ampirik EV eğilimleridir.*
+### 1'den 13'e Tek Tek Taş Atış Yüzdeleri ve Ortalama ΔEV (60 El / 240 Oyuncu-El)
+
+Aşağıdaki tablo, seçilen en iyi atışa göre (`ΔEV = 0.00` en iyi aday) aday taşların ortalama EV farkını (`Avg ΔEV`, düşük = atması daha iyi / ucuz) ve gerçekleşen atış yüzdelerini gösterir:
+
+| Taş (r) | Resmi: Açmamış % | Resmi: Açmış % | Resmi: Avg ΔEV | House: Açmamış % | House: Açmış % | House: Avg ΔEV |
+|---:|---:|---:|---:|---:|---:|---:|
+| **1** | %12.23 | %1.27 | +7.45 | **%26.11** | %3.11 | +7.94 |
+| **2** | %10.07 | %1.98 | +7.33 | **%19.12** | %4.35 | +7.83 |
+| **3** | %5.40 | %2.27 | +7.39 | **%9.56** | %4.35 | +6.63 |
+| **4** | %4.68 | %5.52 | +6.35 | %5.56 | %4.97 | +6.02 |
+| **5** | %7.37 | %7.37 | +6.99 | %5.71 | %4.66 | +6.58 |
+| **6** | %6.47 | %7.08 | +6.73 | %4.28 | %7.30 | +5.31 |
+| **7** | %4.50 | %8.07 | +5.42 | **%1.85** | %6.68 | +3.87 |
+| **8** | %7.19 | %8.36 | +8.65 | **%2.85** | %8.54 | +4.70 |
+| **9** | %8.99 | %10.76 | +6.95 | **%1.71** | %8.23 | +6.11 |
+| **10** | %9.17 | %11.47 | +7.70 | **%2.43** | %12.42 | +5.72 |
+| **11** | %7.19 | %12.89 | +9.53 | **%2.85** | %13.04 | +6.55 |
+| **12** | %7.55 | %12.75 | +10.13 | %5.71 | %12.58 | +10.38 |
+| **13** | **%9.17** | %10.20 | +10.40 | **%12.27** | %9.78 | +8.61 |
+
+> *Metodoloji Notu: Bu sonuçlar kesin Nash Dengesi değil, `PlannerAgent v2.1`'in CRN (Common Random Numbers) simülasyonlarından elde edilen ampirik EV eğilimleridir.*
 
 ---
 
-## 5. Kurulum ve Çalıştırma
+## 5. 101 Okey Matematiksel Strateji El Kitabı (EV & Olasılık Analizi)
+
+Bu rehber, 101 Okey'deki kritik karar anlarını (**Resmi Kurallar** ve **Katlamalı + 10× Taş Yedirme Cezası** altında) kapalı-form olasılık ve Beklenen Değer (EV) eşikleriyle modeller.
+
+### 5.1. Oyunun Temel Kısıtı: Kısa Ufuk ve Asimetri
+
+- **Çekiş Ufku (Horizon):** 106 taşın 85'i dağıtılır ($22 + 21 + 21 + 21$). Ortada yalnızca $D = 21$ taş kalır; her oyuncunun el boyunca göreceği maksimum çekiş sayısı:
+
+$$k = \left\lfloor \frac{D}{4} \right\rfloor \approx 5 \text{ çekiş}$$
+
+- **Ödeme Asimetrisi:** El açamamanın cezası $+202$, açıp elinde taş kalmasının tipik maliyeti $+25$ ile $+55$, bitmenin ödülü $-101$ (Elden/Okeyle $-202$). Kısa ufuk + ağır $+202$ cezası, 101 Okey'i uzun vadeli kurulum oyunundan ziyade **hasar kontrolü (damage control)** oyununa dönüştürür.
+
+### 5.2. Teorem 1: 10× Ceza Kuralında "%10 Sınırı"
+
+Sağındaki oyuncu senin attığın $r \in \{1..13\}$ değerli taşı alıp açar veya işlerse $10r$ ceza yediğin kuralda, elini açmışken o taşı elde tutup el sonu yazmakla atmak arasındaki başabaş noktası taşın değerinden ($r$) bağımsızdır.
+
+- **Seri açmışsan:** Elde tutmanın tavan maliyeti $r$, atmanın beklenen ceza maliyeti $10r \cdot p$ ($p$: sağındaki oyuncunun o taşı alma olasılığı):
+
+$$10r \cdot p > r \implies p > 0.10 \text{ (\%10)}$$
+
+- **Çift açmışsan:** Elde tutmanın tavan maliyeti $2r$ olduğundan sınır ikiye katlanır:
+
+$$10r \cdot p > 2r \implies p > 0.20 \text{ (\%20)}$$
+
+> **Kural:** Elini seri açtıktan sonra, sağındaki oyuncunun alma ihtimali **%10'u geçen** hiçbir canlı taşı (özellikle 9–12) atma; elinde tutup el sonu $r$ puan yazmak matematiksel olarak daha ucuzdur.
+
+### 5.3. Teorem 2: Taş Bağlanabilirliği ve "13 Paradoksu"
+
+Herhangi bir taşın rakip elinde bir 3'lü per (seri veya grup) tamamlama esnekliği, katılabileceği farklı 3'lü kombinasyon sayısıyla doğru orantılıdır:
+
+- **Grup (Set) esnekliği:** Her sayı için diğer 3 renkten $\binom{3}{2} = 3$ farklı 3'lü grup vardır.
+- **Seri (Run) esnekliği (`12-13-1` yasak):**
+  - **1 ve 13 (Uç taşlar):** Yalnızca 1 seri (`1-2-3` veya `11-12-13`) $\rightarrow$ **Toplam 4 kombinasyon**.
+  - **2 ve 12:** 2 seri $\rightarrow$ **Toplam 5 kombinasyon**.
+  - **3–11 (İç taşlar):** 3 seri $\rightarrow$ **Toplam 6 kombinasyon**.
+
+$$\text{10× Ceza Tehlike İndeksi} = (\text{Toplam 3'lü Kombinasyon}) \times (10r)$$
+
+| Taş Değeri ($r$) | 3'lü Kombinasyon | Max Ceza ($10r$) | Tehlike İndeksi | Karar Sınıfı |
+|---:|---:|---:|---:|---|
+| **1** | 4 | +10 | **40** | En güvenli yakmalık |
+| **2** | 5 | +20 | **100** | Güvenli yakmalık |
+| **3** | 6 | +30 | **180** | Düşük risk |
+| **4** | 6 | +40 | **240** | Düşük–orta risk |
+| **5** | 6 | +50 | **300** | Orta risk |
+| **6** | 6 | +60 | **360** | Orta risk |
+| **7** | 6 | +70 | **420** | Orta–yüksek risk |
+| **8** | 6 | +80 | **480** | Yüksek risk |
+| **13** | **4** | +130 | **520** | **13 Paradoksu:** 9–12'den güvenli |
+| **9** | 6 | +90 | **540** | Çok tehlikeli |
+| **10** | 6 | +100 | **600** | Çok tehlikeli |
+| **12** | 5 | +120 | **600** | Çok tehlikeli |
+| **11** | **6** | +110 | **660** | **Oyunun en zehirli taşı** |
+
+> **Sonuç:** `12-13-1` yasağı `13`'ün seri esnekliğini üçte birine düşürür. Canlı (komşuları çıkmamış) bir `9, 10, 11` veya `12` atmak, izole bir `13` atmaktan matematiksel olarak daha yüksek beklenen ceza taşır.
+
+### 5.4. Teorem 3: Hipergeometrik "Out" Tablosu (Çift mi, Seri mi?)
+
+Kapalı (görünmeyen) $U$ taş içinden seni 101'e (veya baraja) ulaştıracak $m$ tane "out" taş varsa, kalan $k$ çekişte bunlardan en az birini çekme olasılığın kesin olarak:
+
+$$P(\text{seri}) = 1 - \frac{\binom{U - m}{k}}{\binom{U}{k}}$$
+
+| Kalan Çekiş ($k$) | Kapalı Taş ($U$) | $m=2$ Out | $m=4$ Out | $m=6$ Out | $m=8$ Out |
+|---|---:|---:|---:|---:|---:|
+| **$k=5$ (Oyun başı)** | 75 | %13.0 | %24.6 | %34.9 | %44.0 |
+| **$k=3$ (Orta oyun)** | 65 | %9.1 | %17.6 | %25.6 | %33.0 |
+| **$k=1$ (Son tur)** | 55 | %3.6 | %7.3 | %10.9 | %14.5 |
+
+#### 5 Çift Varken Seri Bekleme Şartı
+Çift açtığında elinde kalacak puan $D_{\text{çift}}$ (el sonu ceza $2D_{\text{çift}}$), seri açarsan kalacak puan $D_{\text{seri}}$ olsun. Seri beklemenin Çift açmaktan kârlı olması için gereken minimum olasılık:
+
+$$P(\text{seri}) \cdot D_{\text{seri}} + (1 - P(\text{seri})) \cdot 202 < 2D_{\text{çift}} \implies P_{\min} = \frac{202 - 2D_{\text{çift}}}{202 - D_{\text{seri}}}$$
+
+- **Sayısal Örnek:** $D_{\text{çift}} = 45$ ($2D_{\text{çift}} = 90$) ve $D_{\text{seri}} = 35$ ise:
+
+$$P_{\min} = \frac{202 - 90}{202 - 35} = \%67.1$$
+
+Oyun başında ($k=5$) 8 tane out taşın olsa bile seri yakalama ihtimalin yalnızca **%44.0**'tür ($44.0 < 67.1$). Bu nedenle 5 çift geldiğinde seri beklemek, yalnızca elin $2D_{\text{çift}} > 130$ civarında çok ağır ve $k=5$ (ilk tur) iken haklı çıkabilir; diğer neredeyse tüm durumlarda anında Çift açmak zorunlu $+EV$'dir.
+
+### 5.5. Teorem 4: 101'i Bulunca 1 Tur Bekleme Eşiği (Elden / Bloke)
+
+Şu an elinde $D$ deadwood bırakarak açabiliyorsun. 1 tur bekleyip Elden bitme ($-202$) kovalamak için gereken minimum bitme olasılığı ($p_{\text{kilit}}$: o 1 tur içinde elin bitmesi veya katlamalı barajının seni kilitlemesi olasılığı):
+
+$$p_{\text{bit}} > \frac{p_{\text{kilit}} \cdot (202 - D)}{202 + D + p_{\text{kilit}} \cdot (202 - D)}$$
+
+$D = 30$ ve katlamalıda kilitlenme/bitme riski yalnızca $p_{\text{kilit}} = 0.20$ iken:
+
+$$p_{\text{bit}} > \frac{0.20 \cdot 172}{232 + 34.4} \approx \%12.9$$
+
+Tek çekişte ($U \approx 75$) %12.9 bitme olasılığı için seni doğrudan elden bitirecek $\ge 10$ farklı out gerekir. 21 taşlık açılmamış elde bu pratikte oluşmadığından, barajı bulduğun an beklemeden açmak kesin optimaldir.
+
+### 5.6. Teorem 5: Okey (Joker) Saklama vs. Harcama Koşulu
+
+- **Henüz açmamışken:** Okey'i harcayıp açmak seni $+202$ riskinden kurtarır; Teorem 4 gereği açılış sağlayan Okey'i elinde tutmak neredeyse her zaman ağır $-EV$'dir (Counterfactual testte **+15.80** / **+26.01 EV** kaybı).
+- **Zaten açmışken (Okeyle Bitme Kovalamak):** Okeyle bitmek sana normal bitmeye göre ekstra $-101$ bonus verir; ancak elinde Okey varken başka biri bitirirse (veya taşlar biterse) Okey elinde kaldığı için $+101$ ek ceza yersin. Kazanç ve ceza simetrik olduğundan karar kuralı nettir:
+
+$$P(\text{Okeyle bitmem}) > P(\text{El bitmeden Okey'le yakalanmam})$$
+
+Masada 2–3 taşı kalmış açmış bir rakip varsa veya yerde $\le 8$ taş ($k \le 2$) kaldıysa, Okey'i saklamayı bırakıp işlek/per olarak harcamak $+EV$'dir.
+
+### 5.7. Masada Tek Bakışta Karar Özeti
+
+1. **Barajı bulduğun an aç:** Tek tur beklemenin başabaş şartı (%12+ tek çekişte elden bitme) pratikte sağlanmaz.
+2. **5 Çift = İniş:** İlk turda $\ge 90$ seri puanın ve çok yüksek çift cezan ($2D_{\text{çift}} > 130$) yoksa seri bekleme.
+3. **Açmadan önce yakılacaklar:** Önce `1–3`, sonra komşusu çıkmış ölü taşlar, sonra izole `13`. Canlı `9–11`'ler en son atılır.
+4. **Açtıktan sonra "%10 Kuralı":** Sağındaki oyuncunun alma ihtimali **%10**'u geçen (Seri) veya **%20**'yi geçen (Çift) hiçbir taşı atma; elinde tut.
+5. **Okey egosu yapma:** Açılışa yarıyorsa anında harca; açmışsan da yalnızca rakiplerden önce bitme şansın **%50**'nin üzerindeyken sakla.
+
+---
+
+## 6. Kurulum ve Çalıştırma
 
 ### Testlerin Çalıştırılması
 Tüm kural, çözücü, ajan ve ML testlerini çalıştırmak için:

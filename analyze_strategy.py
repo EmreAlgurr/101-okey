@@ -31,6 +31,7 @@ def analyze_strategy(
     # Aggregators
     discard_rank_unopened: dict[int, int] = defaultdict(int)
     discard_rank_opened: dict[int, int] = defaultdict(int)
+    discard_rank_evs: dict[int, list[float]] = defaultdict(list)
     iso_high_ev_costs: list[float] = []  # EV cost of keeping isolated 10-13 vs discarding
     iso_low_ev_costs: list[float] = []   # EV cost of keeping isolated 1-4 vs discarding
 
@@ -102,6 +103,8 @@ def analyze_strategy(
                     cands = d.get("all_cands", [])
                     best_ev = d["ev_best"]
                     for c in cands:
+                        if c["rank"] >= 1:
+                            discard_rank_evs[c["rank"]].append(c["ev"] - best_ev)
                         if c["isolated"] and c["rank"] >= 10:
                             # Cost of NOT discarding an isolated high tile when opened/unopened
                             if d["open_type"] != "none" and c["ev"] > best_ev:
@@ -157,18 +160,20 @@ def analyze_strategy(
     print("-" * 84)
     tot_u = max(1, sum(discard_rank_unopened.values()))
     tot_o = max(1, sum(discard_rank_opened.values()))
-    print(f"{'Rank':>4} | {'Unopened %':>11} | {'Opened %':>10} | {'Strategy Pattern'}")
-    print("-" * 84)
+    print(f"{'Rank':>4} | {'Unopened %':>11} | {'Opened %':>10} | {'Avg ΔEV':>9} | {'Strategy Pattern'}")
+    print("-" * 88)
     for rk in range(1, 14):
         pu = 100.0 * discard_rank_unopened[rk] / tot_u
         po = 100.0 * discard_rank_opened[rk] / tot_o
+        evs = discard_rank_evs[rk]
+        avg_dev = sum(evs) / max(1, len(evs))
         if rk <= 4:
             note = "Dump early when unopened (low 101 contribution); keep low when opened"
         elif rk >= 10:
             note = "Protect early if connected (reaches 101); shed aggressively once opened"
         else:
             note = "High centrality (5-9): dangerous to feed next player"
-        print(f"{rk:>4} | {pu:>10.2f}% | {po:>9.2f}% | {note}")
+        print(f"{rk:>4} | {pu:>10.2f}% | {po:>9.2f}% | {avg_dev:>+8.2f} | {note}")
     avg_hi = sum(iso_high_ev_costs) / max(1, len(iso_high_ev_costs))
     avg_lo = sum(iso_low_ev_costs) / max(1, len(iso_low_ev_costs))
     print(
