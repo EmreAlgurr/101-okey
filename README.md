@@ -87,9 +87,9 @@ Tüm turnuvalar **koltuk sırası döndürülerek** (4 koltuğun tamamı eşit p
 
 ---
 
-## 4. Çıkarılan Optimal 101 Okey Stratejisi (600 El Analizi)
+## 4. Ampirik 101 Okey Strateji Bulguları (600 El / CRN EV Analizi)
 
-`analyze_strategy.py` ile hem **Resmi Kurallar** hem de **Katlamalı + 10× Yedirme Cezası** altında 150'şer el (600 oyuncu-el) simüle edilerek aşağıdaki matematiksel sonuçlar elde edilmiştir:
+`PlannerAgent v2.1` ile **Resmi Kurallar** ve **Katlamalı + 10× Yedirme Cezası** altında 150'şer el (600 oyuncu-el) simüle edilerek karar anlarındaki beklenen değer (EV) eğilimleri ve aynı el üzerinde *counterfactual* Okey testleri (80'er el / 320 oyuncu-el) çıkarılmıştır:
 
 | Stratejik Kriter | Resmi Kurallar | House Rules (Katlamalı + 10× Ceza) | Optimal Çıkarım |
 |---|---:|---:|---|
@@ -100,7 +100,7 @@ Tüm turnuvalar **koltuk sırası döndürülerek** (4 koltuğun tamamı eşit p
 | **Açmamışken 6–11 Atış Oranı** | %36.8 | **%13.6** | Canlı 6–11 atmak hem `+60..+110` ceza hem rakibe açılış hediyesi demektir. |
 | **"13 Paradoksu" (Uç Taş)** | %11.0 | **%11.1** | `12-13-1` yasağı yüzünden `13` tek taraflı uç taştır; canlı `8–10`'lardan daha güvenlidir. |
 | **Açtıktan Sonra 1–4 Atış Oranı** | %11.6 | **%21.0** | 10× cezalı masada ölü düşük taş atmak, canlı `10–12` atmaktan güvenlidir. |
-| **Okey'i Açılışta Harcama vs Açamama** | `+6.78` vs `+202.0` | **`+51.60` vs `+219.95`** | Okey'i harcayıp elini açabilen ellerde ort. puan `+6.78`/`+51.60`'a düşer; el açamayıp Okey'le yakalanmanın bedeli ağırdır. |
+| **Counterfactual Okey Testi** *(Aynı El)* | **`+15.80` EV** (%62.2) | **`+26.01` EV** (%88.9) | Okey'le açabiliyorken harcayıp açmak (`+15.36`), saklayıp beklemekten (`+41.37`) **+26.01 puan** kârlıdır. |
 | **Yandan Taş Alma Kazancı (Açılış)** | `+63.87` EV | **`+60.32` EV** | Seni açtırıyorsa solundan taş almak hem sana `+60` kazandırır hem rakibe `10×` ceza yazar. |
 
 > *Metodoloji Notu: Bu sonuçlar kesin Nash Dengesi değil, `PlannerAgent v2.1`'in 600'er eldeki CRN (Common Random Numbers) simülasyonlarından türetilmiş ampirik EV eğilimleridir.*
