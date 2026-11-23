@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Official 101 Okey — Play &amp; Spectate</title>
+<style>
+  :root {
+    --felt-dark: #0b3324;
+    --felt-mid: #114b35;
+    --felt-light: #196447;
+    --wood-dark: #4b2b14;
+    --wood-mid: #6e4120;
+    --wood-light: #8d552b;
+    --tile-bg: #faf5e8;
+    --tile-border: #d9ccb0;
+    --red: #c92a2a;
+    --yellow: #d98200;
+    --blue: #1864ab;
+    --black: #1e242b;
+    --gold: #f5b935;
+    --purple: #7950f2;
+    --panel-bg: rgba(9, 24, 18, 0.88);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --text-main: #f1f5f2;
+    --text-muted: #9eb7aa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #071b13;
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top Toolbar */
+  .topbar {
+    height: 54px;
+    background: #061710;
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.4px;
+  }
+  .brand-badge {
+    background: linear-gradient(135deg, #f5b935, #d98200);
+    color: #1c1304;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    font-size: 13px;
+  }
+  select, button {
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: #102e22;
+    color: var(--text-main);
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  button:hover:not(:disabled) { background: #194734; border-color: rgba(255, 255, 255, 0.35); }
+  button:disabled { opacity: 0.42; cursor: not-allowed; }
+  .btn-primary { background: #1f7a53; border-color: #2ea471; font-weight: 600; }
+  .btn-primary:hover:not(:disabled) { background: #269163; }
+  .btn-gold { background: #b87d14; border-color: #f5b935; color: #fff8e6; font-weight: 600; }
+  .btn-gold:hover:not(:disabled) { background: #cf8e19; }
+  .btn-danger { background: #9b2226; border-color: #e05252; font-weight: 600; }
+  .btn-danger:hover:not(:disabled) { background: #b8292e; }
+  input[type="checkbox"] { accent-color: #2ea471; width: 15px; height: 15px; cursor: pointer; }
+  input[type="range"] { accent-color: #f5b935; width: 90px; cursor: pointer; }
+
+  /* Main Layout */
+  .main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* Emerald Felt Table */
+  .table-wrap {
+    flex: 1;
+    background: radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt-mid) 52%, var(--felt-dark) 100%);
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 185px 1fr 185px;
+    padding: 10px 12px 12px 12px;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  /* Opponent Seats */
+  .seat-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .seat-card.active-turn {
+    border-color: var(--gold);
+    box-shadow: 0 0 14px rgba(245, 185, 53, 0.45);
+  }
+  .seat-top { grid-column: 2; grid-row: 1; max-width: 520px; width: 100%; justify-self: center; }
+  .seat-left { grid-column: 1; grid-row: 2; align-self: center; }
+  .seat-right { grid-column: 3; grid-row: 2; align-self: center; }
+
+  .seat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .seat-badges {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+  .badge {
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--text-muted);
+  }
+  .badge-open-series { background: rgba(46, 164, 113, 0.25); color: #69e6ad; border: 1px solid rgba(46, 164, 113, 0.5); }
+  .badge-open-pairs { background: rgba(121, 80, 242, 0.28); color: #c5b3ff; border: 1px solid rgba(121, 80, 242, 0.55); }
+  .badge-penalty { background: rgba(201, 42, 42, 0.35); color: #ff8787; border: 1px solid rgba(255, 107, 107, 0.6); }
+
+  .seat-discard-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .revealed-hand {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 3px;
+    max-height: 92px;
+    overflow-y: auto;
+  }
+
+  /* Center Table Area */
+  .center-area {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+  .center-top-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: rgba(6, 23, 16, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 8px 14px;
+  }
+  .deck-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .deck-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .draw-pile-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 62px;
+    height: 62px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #1b4d37, #0e2e20);
+    border: 2px solid #3c8c68;
+    color: #fff;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  }
+  .draw-pile-btn.pulse {
+    border-color: var(--gold);
+    box-shadow: 0 0 16px rgba(245, 185, 53, 0.65);
+  }
+  .draw-pile-btn span { font-size: 10px; font-weight: 600; color: #b6d9c7; }
+
+  .prev-discard-slot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.22);
+  }
+  .prev-discard-slot.takeable {
+    border: 2px solid var(--gold);
+    background: rgba(245, 185, 53, 0.14);
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(245, 185, 53, 0.45);
+  }
+
+  .joker-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245, 185, 53, 0.15);
+    border: 1px solid rgba(245, 185, 53, 0.55);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffe08a;
+  }
+
+  /* Open Melds Zone */
+  .melds-zone {
+    flex: 1;
+    background: rgba(5, 20, 14, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+  .melds-empty {
+    margin: auto;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 13px;
+    font-style: italic;
+  }
+  .meld-owner-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .meld-owner-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .meld-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .meld-box {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.28);
+    padding: 4px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .meld-box.layoff-target {
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(245, 185, 53, 0.5);
+    cursor: pointer;
+  }
+  .meld-pts {
+    font-size: 10px;
+    color: #9eb7aa;
+    margin-left: 5px;
+    font-weight: 700;
+  }
+
+  /* Physical 101 Okey Tiles */
+  .tile {
+    width: 38px;
+    height: 52px;
+    background: linear-gradient(180deg, #fffdf7 0%, var(--tile-bg) 100%);
+    border: 2px solid var(--tile-border);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    user-select: none;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.42), inset 0 1px 0 #fff;
+    font-weight: 800;
+    line-height: 1;
+    transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+  }
+  .tile.sm { width: 28px; height: 38px; border-radius: 5px; }
+  .tile.xs { width: 24px; height: 32px; border-radius: 4px; }
+  .tile-num { font-size: 19px; }
+  .tile.sm .tile-num { font-size: 13px; }
+  .tile.xs .tile-num { font-size: 11px; }
+  .tile-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-top: 3px;
+  }
+  .tile.sm .tile-dot { width: 5px; height: 5px; margin-top: 2px; }
+  .tile.xs .tile-dot { width: 4px; height: 4px; margin-top: 1px; }
+
+  .c-red { color: var(--red); }
+  .c-red .tile-dot { background: var(--red); }
+  .c-yellow { color: var(--yellow); }
+  .c-yellow .tile-dot { background: var(--yellow); }
+  .c-blue { color: var(--blue); }
+  .c-blue .tile-dot { background: var(--blue); }
+  .c-black { color: var(--black); }
+  .c-black .tile-dot { background: var(--black); }
+
+  .tile.is-joker {
+    border-color: var(--gold);
+    background: linear-gradient(180deg, #fffbe6 0%, #fcebb8 100%);
+    box-shadow: 0 0 10px rgba(245, 185, 53, 0.65), 0 3px 5px rgba(0,0,0,0.4);
+  }
+  .tile-star {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 10px;
+    color: #c98600;
+  }
+  .tile-fj {
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    font-size: 8px;
+    font-weight: 800;
+    background: var(--purple);
+    color: #fff;
+    padding: 0 3px;
+    border-radius: 3px;
+  }
+  .tile-warn {
+    position: absolute;
+    bottom: -6px;
+    right: -5px;
+    font-size: 8px;
+    font-weight: 800;
+    background: #c92a2a;
+    color: #fff;
+    padding: 1px 3px;
+    border-radius: 4px;
+    border: 1px solid #fff;
+  }
+  .tile.rack-tile { cursor: pointer; }
+  .tile.rack-tile:hover { transform: translateY(-5px); }
+  .tile.rack-tile.selected {
+    transform: translateY(-9px);
+    border-color: #38d9a9;
+    box-shadow: 0 0 14px rgba(56, 217, 169, 0.8), 0 6px 10px rgba(0,0,0,0.5);
+  }
+  .tile.rack-tile.must-use {
+    border-color: #ff922b;
+    box-shadow: 0 0 12px rgba(255, 146, 43, 0.8);
+  }
+
+  /* Bottom Wooden Rack */
+  .bottom-area {
+    grid-column: 1 / 4;
+    grid-row: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .helper-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 6px 12px;
+  }
+  .solver-stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .stat-pill {
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+    font-weight: 600;
+  }
+  .stat-pill.ready {
+    background: rgba(46, 164, 113, 0.25);
+    color: #69e6ad;
+    border: 1px solid rgba(46, 164, 113, 0.55);
+  }
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .rack {
+    background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-mid) 14%, var(--wood-dark) 100%);
+    border: 3px solid #361d0c;
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: inset 0 2px 4px rgba(255, 220, 175, 0.25), 0 6px 16px rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 132px;
+  }
+  .rack.my-turn {
+    border-color: var(--gold);
+    box-shadow: 0 0 18px rgba(245, 185, 53, 0.45), inset 0 2px 4px rgba(255, 220, 175, 0.25);
+  }
+  .rack-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 54px;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 7px;
+    border-bottom: 2px solid rgba(255, 210, 160, 0.16);
+    flex-wrap: wrap;
+  }
+  .rack-divider {
+    width: 3px;
+    height: 44px;
+    background: rgba(245, 185, 53, 0.55);
+    border-radius: 2px;
+    margin: 0 5px;
+  }
+
+  /* Right Sidebar */
+  .sidebar {
+    width: 280px;
+    background: #061710;
+    border-left: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .side-section {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .side-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .scoreboard-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 13px;
+  }
+  .sb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .sb-row.active { border: 1px solid var(--gold); }
+  .log-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 10px 12px;
+  }
+  .log-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+  }
+  .log-item {
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #d7e4dd;
+    line-height: 1.35;
+  }
+  .log-item.open { background: rgba(46, 164, 113, 0.18); color: #8af0c2; }
+  .log-item.penalty { background: rgba(201, 42, 42, 0.25); color: #ffa8a8; }
+  .log-item.win { background: rgba(245, 185, 53, 0.25); color: #ffe08a; font-weight: 700; }
+  .log-item.system { color: #9eb7aa; font-style: italic; }
+
+  /* End-of-Round Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #0c261b;
+    border: 1px solid rgba(245, 185, 53, 0.5);
+    border-radius: 14px;
+    padding: 20px 24px;
+    width: min(640px, 94vw);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.7);
+  }
+  .modal h2 { font-size: 20px; margin-bottom: 4px; color: #ffe08a; }
+  .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; }
+  table.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  table.score-table th, table.score-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--panel-border);
+    text-align: right;
+  }
+  table.score-table th:first-child, table.score-table td:first-child { text-align: left; }
+  table.score-table th { color: var(--text-muted); font-weight: 600; font-size: 12px; }
+  tr.winner-row td { color: #69e6ad; font-weight: 700; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+  .toast {
+    position: fixed;
+    bottom: 150px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(155, 34, 38, 0.95);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: none;
+    z-index: 40;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-badge">101 OKEY</span>
+      <span>Official Engine &amp; AI Arena</span>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <label>Mode</label>
+        <select id="selMode">
+          <option value="play">Play vs Bots</option>
+          <option value="spectator">Spectator (4 Bots)</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>AI Bot</label>
+        <select id="selBot">
+          <option value="planner">PlannerAgent (CRN)</option>
+          <option value="heuristic">HeuristicAgent</option>
+        </select>
+      </div>
+      <label class="ctrl-group" style="cursor:pointer;">
+        <input type="checkbox" id="chkKatlamali" /> Katlamalı
+      </label>
+      <label class="ctrl-group" style="cursor:pointer;" title="Katlamalı + 10× Discard-Feeding Penalty">
+        <input type="checkbox" id="chkHouseRules" /> House (Katlamalı + 10× Feed)
+      </label>
+      <label class="ctrl-group" style="cursor:pointer;">
+        <input type="checkbox" id="chkReveal" /> Reveal Hands
+      </label>
+      <div class="ctrl-group" id="spectatorControls" style="display:none;">
+        <button id="btnSpecPlay" class="btn-primary">▶ Play</button>
+        <button id="btnSpecStep">Step</button>
+        <label style="font-size:11px;">Speed</label>
+        <input type="range" id="rngSpeed" min="300" max="1500" step="100" value="650" />
+        <span id="lblSpeed" style="font-size:11px;min-width:42px;">650ms</span>
+      </div>
+      <button id="btnNewMatch" class="btn-gold">New Match</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="table-wrap">
+      <!-- Top Seat (P2) -->
+      <div class="seat-card seat-top" id="seat2"></div>
+      <!-- Left Seat (P3 - Previous Player) -->
+      <div class="seat-card seat-left" id="seat3"></div>
+
+      <!-- Center Table -->
+      <div class="center-area">
+        <div class="center-top-strip">
+          <div class="deck-box">
+            <div>
+              <div class="deck-label">Indicator</div>
+              <div id="indicatorSlot" style="margin-top:3px;"></div>
+            </div>
+            <div class="joker-pill" id="jokerPill">★ Joker: --</div>
+          </div>
+
+          <button id="btnDrawPile" class="draw-pile-btn" title="Draw from center pile">
+            <div id="drawPileCount">21</div>
+            <span>DRAW</span>
+          </button>
+
+          <div class="prev-discard-slot" id="prevDiscardSlot" title="Previous player's last discard">
+            <div>
+              <div class="deck-label">Prev Discard (P3)</div>
+              <div id="prevDiscardHint" style="font-size:10px;color:#9eb7aa;">--</div>
+            </div>
+            <div id="prevDiscardTile"></div>
+          </div>
+        </div>
+
+        <div class="melds-zone" id="meldsZone">
+          <div class="melds-empty">No open melds on the table yet.</div>
+        </div>
+      </div>
+
+      <!-- Right Seat (P1 - Next Player) -->
+      <div class="seat-card seat-right" id="seat1"></div>
+
+      <!-- Bottom Area: Helper Bar + Wooden Rack -->
+      <div class="bottom-area">
+        <div class="helper-action-bar">
+          <div class="solver-stats">
+            <span class="stat-pill" id="statOpenPts">Best Open: 0 / 101</span>
+            <span class="stat-pill" id="statPairs">Pairs: 0 / 5</span>
+            <span class="stat-pill" id="statDeadwood">Deadwood: 0</span>
+            <button id="btnSortColor">Sort Color</button>
+            <button id="btnSortNumber">Sort Number</button>
+            <button id="btnSortSolver" class="btn-gold">Auto-Group (Solver)</button>
+          </div>
+          <div class="action-buttons" id="humanActionButtons">
+            <button id="btnActDraw" class="btn-primary">Draw Deck</button>
+            <button id="btnActTake" class="btn-gold">Take Discard</button>
+            <button id="btnActOpenSeries" class="btn-primary">Open Series</button>
+            <button id="btnActOpenPairs" class="btn-primary">Open Pairs</button>
+            <button id="btnActMeld" class="btn-primary">Meld</button>
+            <button id="btnActLayOff" class="btn-gold">Lay Off (İşlek)</button>
+            <button id="btnActDiscard" class="btn-danger">Discard Selected</button>
+          </div>
+        </div>
+
+        <div class="rack" id="rack">
+          <div class="rack-row" id="rackRow1"></div>
+          <div class="rack-row" id="rackRow2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-section">
+        <div class="side-title">Match Scoreboard (Round <span id="lblRound">1</span> · Lower Wins)</div>
+        <div class="scoreboard-mini" id="scoreboardMini"></div>
+      </div>
+      <div class="log-wrap">
+        <div class="side-title">Move Log</div>
+        <div class="log-list" id="moveLog"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- End of Round Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h2 id="modalTitle">Round Complete</h2>
+      <div class="modal-sub" id="modalSub"></div>
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Status</th>
+            <th>Hand / Bonus</th>
+            <th>+101 Pen</th>
+            <th>Round</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="modalBody"></tbody>
+      </table>
+      <div class="modal-actions">
+        <button id="btnCloseModal">Inspect Table</button>
+        <button id="btnNextRound" class="btn-primary">Next Round →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+let state = null;
+let selectedTileId = null;
+let sortMode = 'solver'; // 'color' | 'number' | 'solver'
+let spectatorRunning = false;
+let botTimer = null;
+let busy = false;
+let modalDismissedForRound = -1;
+
+const colorOrder = { red: 0, yellow: 1, blue: 2, black: 3 };
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 3200);
+}
+
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== null) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+function tileHTML(t, sizeClass = '', extraClass = '', warnText = '') {
+  const c = t.assigned_color || t.color || 'black';
+  const num = t.assigned_number || t.number;
+  const jokerCls = t.is_joker ? 'is-joker' : '';
+  const star = t.is_joker ? '<span class="tile-star">★</span>' : '';
+  const fj = t.is_false_joker ? '<span class="tile-fj">FJ</span>' : '';
+  const warn = warnText ? `<span class="tile-warn">${warnText}</span>` : '';
+  return `<div class="tile ${sizeClass} c-${c} ${jokerCls} ${extraClass}" data-tid="${t.tile_id}">
+    ${star}${fj}<div class="tile-num">${num}</div><div class="tile-dot"></div>${warn}
+  </div>`;
+}
+
+function renderOpponentSeat(seat) {
+  const el = document.getElementById('seat' + seat.seat_id);
+  const isActive = !state.done && state.current_player === seat.seat_id;
+  el.classList.toggle('active-turn', isActive);
+
+  let openBadge = '<span class="badge">Unopened</span>';
+  if (seat.open_type === 'series') openBadge = '<span class="badge badge-open-series">Series Open</span>';
+  else if (seat.open_type === 'pairs') openBadge = '<span class="badge badge-open-pairs">Pairs Open (x2)</span>';
+
+  const penBadge = seat.penalty > 0 ? `<span class="badge badge-penalty">+${seat.penalty}</span>` : '';
+  const topDiscard = seat.discard_pile.length ? seat.discard_pile[seat.discard_pile.length - 1] : null;
+  const discHTML = topDiscard ? tileHTML(topDiscard, 'xs') : '<span style="opacity:0.4;">Empty</span>';
+
+  let revealedHTML = '';
+  if (seat.hand) {
+    const sorted = [...seat.hand].sort((a, b) => (colorOrder[a.color] - colorOrder[b.color]) || (a.number - b.number));
+    revealedHTML = `<div class="revealed-hand">${sorted.map(t => tileHTML(t, 'xs')).join('')}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="seat-header">
+      <span>${seat.name}</span>
+      <span style="color:#ffe08a;">${seat.hand_size} tiles</span>
+    </div>
+    <div class="seat-badges">${openBadge}${penBadge}</div>
+    <div class="seat-discard-row">
+      <span>Last discard (${seat.discard_pile.length}):</span>
+      ${discHTML}
+    </div>
+    ${revealedHTML}
+  `;
+}
+
+function renderCenter() {
+  const hl = state.human_legal;
+  document.getElementById('indicatorSlot').innerHTML = tileHTML(state.indicator, 'sm');
+  document.getElementById('jokerPill').textContent = `★ Joker: ${state.joker.label}`;
+
+  const btnDraw = document.getElementById('btnDrawPile');
+  document.getElementById('drawPileCount').textContent = state.draw_pile_size;
+  btnDraw.disabled = !hl.can_draw_deck;
+  btnDraw.classList.toggle('pulse', hl.can_draw_deck);
+
+  // Previous player for Seat 0 is Seat 3
+  const p3Discards = state.seats[3].discard_pile;
+  const prevSlot = document.getElementById('prevDiscardSlot');
+  const prevTileEl = document.getElementById('prevDiscardTile');
+  const prevHint = document.getElementById('prevDiscardHint');
+  if (p3Discards.length) {
+    prevTileEl.innerHTML = tileHTML(p3Discards[p3Discards.length - 1], 'sm');
+    if (hl.can_take_discard) {
+      prevHint.textContent = 'Click to Take!';
+    } else if (!hl.is_human_turn) {
+      prevHint.textContent = 'Wait for your turn';
+    } else if (state.phase !== 'draw') {
+      prevHint.textContent = 'Already drew';
+    } else {
+      prevHint.textContent = 'Cannot open/meld/lay off';
+    }
+  } else {
+    prevTileEl.innerHTML = '';
+    prevHint.textContent = 'Empty';
+  }
+  prevSlot.classList.toggle('takeable', hl.can_take_discard);
+
+  // Open Table Melds grouped by owner
+  const zone = document.getElementById('meldsZone');
+  if (!state.table_melds.length) {
+    zone.innerHTML = '<div class="melds-empty">No open melds on the table yet.</div>';
+    return;
+  }
+
+  const layoffMap = new Map();
+  for (const lo of hl.layoffs) {
+    if (selectedTileId === null || lo.tile_id === selectedTileId) {
+      layoffMap.set(lo.meld_id, lo);
+    }
+  }
+
+  const byOwner = new Map();
+  for (const m of state.table_melds) {
+    if (!byOwner.has(m.owner_id)) byOwner.set(m.owner_id, []);
+    byOwner.get(m.owner_id).push(m);
+  }
+
+  let html = '';
+  for (const [ownerId, melds] of byOwner.entries()) {
+    const ownerName = state.seats[ownerId].name;
+    html += `<div class="meld-owner-group"><div class="meld-owner-label">${ownerName}</div><div class="meld-list">`;
+    for (const m of melds) {
+      const targetLo = layoffMap.get(m.meld_id);
+      const cls = targetLo ? 'layoff-target' : '';
+      const clickAttr = targetLo ? `onclick="doLayOff(${targetLo.tile_id}, ${m.meld_id}, '${targetLo.side}')"` : '';
+      const ptsTag = m.meld_type === 'pair' ? 'Pair' : `${m.points}p`;
+      html += `<div class="meld-box ${cls}" ${clickAttr} title="${targetLo ? 'Click to lay off ' + targetLo.tile_label : 'Meld #' + m.meld_id}">
+        ${m.placed_tiles.map(t => tileHTML(t, 'sm')).join('')}
+        <span class="meld-pts">${ptsTag}</span>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  zone.innerHTML = html;
+}
+
+function renderRack() {
+  const seat0 = state.seats[0];
+  const hand = seat0.hand || [];
+  const hl = state.human_legal;
+  const sh = state.solver_helper;
+
+  // Solver helper stats
+  const openEl = document.getElementById('statOpenPts');
+  openEl.textContent = `Best Open: ${sh.best_open_points} / ${sh.required_series_points}`;
+  openEl.classList.toggle('ready', sh.can_open_series);
+
+  const pairsEl = document.getElementById('statPairs');
+  pairsEl.textContent = `Pairs: ${sh.best_pairs_count} / ${sh.required_pairs_count}`;
+  pairsEl.classList.toggle('ready', sh.can_open_pairs);
+
+  document.getElementById('statDeadwood').textContent = `Deadwood: ${sh.min_deadwood}`;
+
+  // Action buttons
+  const btnDraw = document.getElementById('btnActDraw');
+  const btnTake = document.getElementById('btnActTake');
+  const btnOpenS = document.getElementById('btnActOpenSeries');
+  const btnOpenP = document.getElementById('btnActOpenPairs');
+  const btnMeld = document.getElementById('btnActMeld');
+  const btnLayOff = document.getElementById('btnActLayOff');
+  const btnDiscard = document.getElementById('btnActDiscard');
+
+  btnDraw.disabled = !hl.can_draw_deck;
+  btnTake.disabled = !hl.can_take_discard;
+  btnOpenS.disabled = !hl.can_open_series;
+  btnOpenS.textContent = hl.can_open_series ? `Open Series (${hl.open_series_points})` : 'Open Series';
+  btnOpenP.disabled = !hl.can_open_pairs;
+  btnOpenP.textContent = hl.can_open_pairs ? `Open Pairs (${hl.open_pairs_count})` : 'Open Pairs';
+  btnMeld.disabled = !hl.can_meld;
+  btnLayOff.disabled = hl.layoffs.length === 0;
+  btnLayOff.textContent = hl.layoffs.length ? `Lay Off (${hl.layoffs.length})` : 'Lay Off (İşlek)';
+
+  const canDiscardSelected = selectedTileId !== null && hl.discardable_tile_ids.includes(selectedTileId);
+  btnDiscard.disabled = !canDiscardSelected;
+
+  const rackEl = document.getElementById('rack');
+  rackEl.classList.toggle('my-turn', hl.is_human_turn);
+
+  // Keep selectedTileId valid
+  if (selectedTileId !== null && !hand.some(t => t.tile_id === selectedTileId)) {
+    selectedTileId = null;
+  }
+
+  const byId = new Map(hand.map(t => [t.tile_id, t]));
+  const items = []; // {type:'tile', tile} | {type:'div'}
+
+  if (sortMode === 'solver') {
+    for (const grp of sh.groups) {
+      for (const tid of grp) {
+        if (byId.has(tid)) items.push({ type: 'tile', tile: byId.get(tid) });
+      }
+      items.push({ type: 'div' });
+    }
+    const dw = sh.deadwood_ids
+      .map(tid => byId.get(tid))
+      .filter(Boolean)
+      .sort((a, b) => (colorOrder[a.color] - colorOrder[b.color]) || (a.number - b.number));
+    for (const t of dw) items.push({ type: 'tile', tile: t });
+  } else if (sortMode === 'color') {
+    const sorted = [...hand].sort((a, b) => (colorOrder[a.color] - colorOrder[b.color]) || (a.number - b.number));
+    for (const t of sorted) items.push({ type: 'tile', tile: t });
+  } else {
+    const sorted = [...hand].sort((a, b) => (a.number - b.number) || (colorOrder[a.color] - colorOrder[b.color]));
+    for (const t of sorted) items.push({ type: 'tile', tile: t });
+  }
+
+  // Split cleanly into 2 rack rows
+  const splitIdx = Math.ceil(items.length / 2);
+  const row1 = items.slice(0, splitIdx);
+  const row2 = items.slice(splitIdx);
+
+  const renderRow = (arr) => arr.map(it => {
+    if (it.type === 'div') return '<div class="rack-divider"></div>';
+    const t = it.tile;
+    const sel = t.tile_id === selectedTileId ? 'selected' : '';
+    const must = state.must_use_tile_id === t.tile_id ? 'must-use' : '';
+    const pen = hl.penalty_discards[String(t.tile_id)];
+    const warn = pen ? '+101' : '';
+    return tileHTML(t, '', `rack-tile ${sel} ${must}`, warn);
+  }).join('');
+
+  document.getElementById('rackRow1').innerHTML = renderRow(row1);
+  document.getElementById('rackRow2').innerHTML = renderRow(row2);
+
+  // Bind click & double-click handlers on rack tiles
+  document.querySelectorAll('.rack-tile').forEach(el => {
+    const tid = Number(el.dataset.tid);
+    el.addEventListener('click', () => {
+      selectedTileId = (selectedTileId === tid) ? null : tid;
+      render();
+    });
+    el.addEventListener('dblclick', () => {
+      if (state.human_legal.discardable_tile_ids.includes(tid)) {
+        doDiscard(tid);
+      }
+    });
+  });
+}
+
+function renderSidebar() {
+  document.getElementById('lblRound').textContent = state.round_number;
+  const sb = document.getElementById('scoreboardMini');
+  sb.innerHTML = state.seats.map(s => {
+    const active = !state.done && state.current_player === s.seat_id ? 'active' : '';
+    return `<div class="sb-row ${active}">
+      <span>${s.name}</span>
+      <strong>${s.cumulative_score}</strong>
+    </div>`;
+  }).join('');
+
+  const logEl = document.getElementById('moveLog');
+  logEl.innerHTML = state.move_log.map(item =>
+    `<div class="log-item ${item.kind || ''}">${item.text}</div>`
+  ).join('');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function renderModal() {
+  const bd = document.getElementById('modalBackdrop');
+  if (!state.done || modalDismissedForRound === state.round_number) {
+    bd.classList.remove('open');
+    return;
+  }
+  bd.classList.add('open');
+
+  const wf = state.win_flags;
+  if (state.winner !== null) {
+    document.getElementById('modalTitle').textContent = `🏆 ${state.seats[state.winner].name} Wins Round ${state.round_number}!`;
+    const flags = [];
+    if (wf.win_by_elden) flags.push('Elden Bitme');
+    if (wf.win_by_okey) flags.push('Okeyle Bitme');
+    if (wf.win_by_pairs) flags.push('Çift ile Bitme');
+    document.getElementById('modalSub').textContent = flags.length
+      ? `Special Win: ${flags.join(' + ')} (Multiplier x${wf.win_multiplier})`
+      : 'Normal Win (-101 bonus)';
+  } else {
+    document.getElementById('modalTitle').textContent = `Round ${state.round_number} Ended (Draw Pile Empty)`;
+    document.getElementById('modalSub').textContent = 'No winner bonus — everyone receives standard hand penalties.';
+  }
+
+  const body = document.getElementById('modalBody');
+  body.innerHTML = (state.round_breakdown || []).map(r => `
+    <tr class="${r.is_winner ? 'winner-row' : ''}">
+      <td>${r.name}</td>
+      <td>${r.open_type}</td>
+      <td>${r.is_winner ? r.winner_bonus : '+' + r.hand_penalty}</td>
+      <td>${r.in_round_penalty > 0 ? '+' + r.in_round_penalty : '0'}</td>
+      <td><strong>${r.round_score > 0 ? '+' + r.round_score : r.round_score}</strong></td>
+      <td><strong>${r.cumulative_score}</strong></td>
+    </tr>
+  `).join('');
+}
+
+function render() {
+  if (!state) return;
+  document.getElementById('selMode').value = state.mode;
+  document.getElementById('selBot').value = state.bot_type;
+  document.getElementById('chkKatlamali').checked = state.katlamali;
+  document.getElementById('chkHouseRules').checked = state.katlamali && state.feed_penalty_multiplier === 10;
+  document.getElementById('chkReveal').checked = state.reveal_hands;
+  document.getElementById('spectatorControls').style.display = state.mode === 'spectator' ? 'flex' : 'none';
+  document.getElementById('humanActionButtons').style.display = state.mode === 'play' ? 'flex' : 'none';
+  document.getElementById('btnSpecPlay').textContent = spectatorRunning ? '⏸ Pause' : '▶ Play';
+
+  renderOpponentSeat(state.seats[1]);
+  renderOpponentSeat(state.seats[2]);
+  renderOpponentSeat(state.seats[3]);
+  renderCenter();
+  renderRack();
+  renderSidebar();
+  renderModal();
+  scheduleBotIfNeeded();
+}
+
+function scheduleBotIfNeeded() {
+  clearTimeout(botTimer);
+  if (!state || state.done || busy) return;
+
+  if (state.mode === 'play' && state.current_player !== 0) {
+    botTimer = setTimeout(runBotStep, 350);
+  } else if (state.mode === 'spectator' && spectatorRunning) {
+    const delay = Number(document.getElementById('rngSpeed').value);
+    botTimer = setTimeout(runBotStep, delay);
+  }
+}
+
+async function runBotStep() {
+  if (busy || !state || state.done) return;
+  busy = true;
+  try {
+    state = await api('/api/bot_step', 'POST');
+  } catch (e) {
+    showToast(e.message);
+    spectatorRunning = false;
+  } finally {
+    busy = false;
+    render();
+  }
+}
+
+async function sendHumanAction(payload) {
+  if (busy) return;
+  busy = true;
+  try {
+    state = await api('/api/action', 'POST', payload);
+    selectedTileId = null;
+  } catch (e) {
+    showToast(e.message);
+  } finally {
+    busy = false;
+    render();
+  }
+}
+
+function doDiscard(tid) {
+  const pen = state.human_legal.penalty_discards[String(tid)];
+  if (pen) {
+    const reason = pen === 'joker' ? 'a real Joker (Okey)' : 'an işlek (layoffable) tile';
+    if (!confirm(`Warning: Discarding ${reason} will incur a +101 penalty! Discard anyway?`)) {
+      return;
+    }
+  }
+  sendHumanAction({ action_type: 'discard', tile_id: tid });
+}
+
+function doLayOff(tileId, meldId, side) {
+  sendHumanAction({ action_type: 'lay_off', tile_id: tileId, meld_id: meldId, lay_off_side: side });
+}
+
+// Event Wiring
+document.getElementById('btnNewMatch').addEventListener('click', async () => {
+  spectatorRunning = false;
+  modalDismissedForRound = -1;
+  const houseOn = document.getElementById('chkHouseRules').checked;
+  state = await api('/api/new_game', 'POST', {
+    mode: document.getElementById('selMode').value,
+    bot_type: document.getElementById('selBot').value,
+    katlamali: houseOn || document.getElementById('chkKatlamali').checked,
+    feed_penalty_multiplier: houseOn ? 10 : 0,
+    reset_match: true,
+  });
+  selectedTileId = null;
+  render();
+});
+
+document.getElementById('selMode').addEventListener('change', () => document.getElementById('btnNewMatch').click());
+document.getElementById('chkKatlamali').addEventListener('change', () => document.getElementById('btnNewMatch').click());
+document.getElementById('chkHouseRules').addEventListener('change', (e) => {
+  if (e.target.checked) document.getElementById('chkKatlamali').checked = true;
+  document.getElementById('btnNewMatch').click();
+});
+
+document.getElementById('selBot').addEventListener('change', async (e) => {
+  state = await api('/api/config', 'POST', { bot_type: e.target.value });
+  render();
+});
+
+document.getElementById('chkReveal').addEventListener('change', async (e) => {
+  state = await api('/api/config', 'POST', { reveal_hands: e.target.checked });
+  render();
+});
+
+document.getElementById('btnSpecPlay').addEventListener('click', () => {
+  spectatorRunning = !spectatorRunning;
+  render();
+});
+document.getElementById('btnSpecStep').addEventListener('click', () => {
+  spectatorRunning = false;
+  runBotStep();
+});
+document.getElementById('rngSpeed').addEventListener('input', (e) => {
+  document.getElementById('lblSpeed').textContent = `${e.target.value}ms`;
+});
+
+document.getElementById('btnDrawPile').addEventListener('click', () => sendHumanAction({ action_type: 'draw_deck' }));
+document.getElementById('btnActDraw').addEventListener('click', () => sendHumanAction({ action_type: 'draw_deck' }));
+document.getElementById('btnActTake').addEventListener('click', () => sendHumanAction({ action_type: 'take_discard' }));
+document.getElementById('prevDiscardSlot').addEventListener('click', () => {
+  if (state && state.human_legal.can_take_discard) sendHumanAction({ action_type: 'take_discard' });
+});
+document.getElementById('btnActOpenSeries').addEventListener('click', () => sendHumanAction({ action_type: 'open_series' }));
+document.getElementById('btnActOpenPairs').addEventListener('click', () => sendHumanAction({ action_type: 'open_pairs' }));
+document.getElementById('btnActMeld').addEventListener('click', () => sendHumanAction({ action_type: 'meld' }));
+document.getElementById('btnActLayOff').addEventListener('click', () => {
+  const los = state.human_legal.layoffs;
+  if (!los.length) return;
+  const pick = (selectedTileId !== null && los.find(l => l.tile_id === selectedTileId)) || los[0];
+  doLayOff(pick.tile_id, pick.meld_id, pick.side);
+});
+document.getElementById('btnActDiscard').addEventListener('click', () => {
+  if (selectedTileId !== null) doDiscard(selectedTileId);
+});
+
+document.getElementById('btnSortColor').addEventListener('click', () => { sortMode = 'color'; render(); });
+document.getElementById('btnSortNumber').addEventListener('click', () => { sortMode = 'number'; render(); });
+document.getElementById('btnSortSolver').addEventListener('click', () => { sortMode = 'solver'; render(); });
+
+document.getElementById('btnCloseModal').addEventListener('click', () => {
+  modalDismissedForRound = state.round_number;
+  renderModal();
+});
+document.getElementById('btnNextRound').addEventListener('click', async () => {
+  modalDismissedForRound = -1;
+  state = await api('/api/next_round', 'POST');
+  selectedTileId = null;
+  render();
+});
+
+// Initial Load
+(async () => {
+  state = await api('/api/state');
+  render();
+})();
+</script>
+</body>
+</html>
+
